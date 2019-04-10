@@ -1,1 +1,366 @@
-This page will contain some history of WPA3's Dragonfly handshake (and an overview of its implementations). In the meantime see <a href="https://sarwiki.informatik.hu-berlin.de/WPA3_Dragonfly_Handshake">this wiki</a> from some notes.
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" class="no-js">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Dragonblood: Analysing WPA3's Dragonfly Handshake</title>
+	<meta name="keywords" content="WPA3, Dragonfly, Simultaneous Authentication of Equals, SAE, dragonblood, dictionary, partitioning, attack, security protocols, network security, attacks, handshake, Mathy Vanhoef, Eyal Ronen" />
+	<meta name="description" content="This website presents the Dragonblood Attack. It is a collection of attacks against the WPA3 protocol, which mainly abuse the password element generation algorithm of WPA3's Dragonfly handshake." />
+	<link href="css/default.css" rel="stylesheet" type="text/css" media="all" />
+	
+	<link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/modernizr.min.js"></script>
+	<!--[if lt IE 9]>
+	<script src="js/respond.src.js"></script>
+	<![endif]-->
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-35642360-3"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-35642360-3');
+	</script>
+</head>
+<body>
+<div id="wrapper">
+	<div id="header-wrapper">
+		<div id="header" class="container">
+			<div id="logo">
+				<img src="images/logo.png" width="100%"/>
+			</div>
+			<div id="title">
+				<h1>Dragonblood</h1>
+				<h2>Analysing WPA3's Dragonfly Handshake</h2>
+				
+				<h3>By <a href="https://twitter.com/vanhoefm">Mathy Vanhoef</a> (NYUAD) and <a href="https://eyalro.net/">Eyal Ronen</a> (Tel Aviv University & KU Leuven)</h3>
+			</div>
+			
+		</div>
+	</div>
+	<div id="menu-wrapper">
+		<div id="main-nav" class="container">
+			<span class="custom-mobile-menu-title" style="display: none;">Navigate page</span>
+			<ul class="menu">
+				<li class="page_item"><a href="#intro">Intro</a></li>
+				<!-- <li class="page_item"><a href="#demo">Demo</a></li> -->
+				<li class="page_item"><a href="#wpa3">WPA3</a></li>
+				<li class="page_item"><a href="#eappwd">EAP-pwd</a></li>
+				<li class="page_item"><a href="#paper">Paper</a></li>
+				<li class="page_item"><a href="#tools">Tools</a></li>
+				<li class="page_item"><a href="#faq">Q&amp;A</a></li>
+			</ul>
+		</div>
+	</div>
+	<div id="page" class="container">
+	<div id="content">
+		<!-------------------- INTRO -------------------->
+
+		<a name="intro" ></a>
+		<h2 class="firsttitle">Introduction</h2>
+		<p>Currently, all modern Wi-Fi networks use WPA2 to protect transmitted data.
+		However, because WPA2 is more than 14 years old,
+		the Wi-Fi Alliance <a href="https://www.wi-fi.org/news-events/newsroom/wi-fi-alliance-introduces-wi-fi-certified-wpa3-security">recently announced</a> the new and more secure WPA3 protocol.
+		One of the main advantages of WPA3 is that, thanks to its underlying Dragonfly handshake, it's near impossible to <a href="https://arstechnica.com/information-technology/2012/08/wireless-password-easily-cracked/">crack</a> the password of a network.
+		<!-- As devices are now being released that support WPA3, the expectation is that it will replace WPA2 over the next years. -->
+		Unfortunately, we found that even with WPA3, an attacker within range of a victim <strong>can still recover the password of the Wi-Fi network</strong>.
+		Concretely, attackers can then read information that WPA3 was assumed to safely encrypt.	
+		This can be abused to steal sensitive transmitted information such as credit card numbers, passwords, chat messages, emails, and so on.
+		</p>
+
+		<p>
+		The Dragonfly handshake, which forms the core of WPA3, is also used on certain Wi-Fi networks that require a username and password for access control.
+		That is, Dragonfly is also used in the EAP-pwd protocol.
+		Unfortunately, our attacks against WPA3 also work against EAP-pwd, meaning an adversary can even recover a user's password when EAP-pwd is used.
+		Moreover, we also discovered serious bugs in most products that implement EAP-pwd.
+		These allow an adversary to impersonate any user, and thereby <strong>access the Wi-Fi network, without knowing the user's password</strong>.
+		Although we believe that EAP-pwd is used fairly infrequently, this still poses serious risks for many users,
+		and illustrates the risks of incorrectly implementing Dragonfly.
+		</p>
+		
+		<!-- Here we should mention our devastating EAP-pwd attacks -->
+		
+
+		<p>
+		The technical details behind our attacks against WPA3 can be found in our detailed research paper titled <a href="https://papers.mathyvanhoef.com/dragonblood.pdf">Dragonblood: A Security Analysis of WPA3's SAE Handshake</a>.
+		The details of our EAP-pwd attacks are explained on this website.
+		</p>
+
+		<h3>Coordinated Disclosure</h3>
+		<p>
+		We collaborated with the WiFi Alliance and CERT/CC to notify all affected vendors in a coordinated manner,
+		and helped with implementing backwards-compatible countermeasures. Please check with your vendors for updates.
+		We will post more information about the CVEs and available patches in the next hours and days.
+		</p>
+	
+		<!-------------------- DEMO -------------------->
+
+		<!--
+		<h3><a name="demo" href="#demo">Demonstration</a></h3>
+		<p>As a proof-of-concept we demonstrate an implementation-specific downgrade attack that we discovered against Linux's iwd and the Samsung Galaxy S10.
+		In this demonstration, we attack iwd, which is a Wi-Fi client that can be used on Linux.
+		Although our other attacks against WPA3 abuse different weaknesses, they have a similar impact.
+		Namely, our timing and cache-based side-channel attacks enable the adversary to recover the password of a WPA3 network.
+		These attack are especially effective when the network uses a predictable or short password.
+		</p>
+		<div class="demo-video">
+		<div class="demo-video-container">
+			<iframe width="853" height="480" src="https://www.youtube-nocookie.com/embed/Oh4WURZoR98?rel=0&amp;showinfo=0&amp;vq=hd720" frameborder="0" allowfullscreen></iframe>
+		</div>
+		</div>
+		<p>Our attacks are not limited to recovering the password of the network.
+		Once the adversary possess the password of the network, any data or information that the victim transmits or receives can be decrypted.
+		Fortunately, an adversary won't be able to recover data that is sent to (or received from) a website that uses HTTPS.
+		</p>
+		-->
+
+		<!-------------------- DETAILS -------------------->
+			
+		<a name="wpa3" ></a>
+		<h2>Flaws in WPA3</h2>
+
+			<p>
+			We discovered two types of design flaws in WPA3.
+			The first type are downgrade attacks,
+			and the second type are side-channels leaks that reveal information about the password being used.
+			Both of these vulnerabilities can be abused to recover the password used by the Wi-Fi network.
+			</p>
+
+			<p>
+			Our downgrade attack enables an adversary to force a client to partly execute WPA2's 4-way handshake,
+			which can subsequently be used to perform a traditional brute-force attack against the partial WPA2 handshake.
+			Additionally, we also discovered downgrade attacks against the Dragonsly handshake itself,
+			which can be abuse to force a victim into using a weaker elliptic curve than it would normally use.
+			</p>
+
+			<p>
+			Our side-channel attacks target Dragonfly's password encoding method.
+			The cache-based attack exploits Dragonflys's hash-to-curve algorithm,
+			and our timing-based attack exploits the hash-to-group algorithm.
+			The information that is leaked in these attacks can be used to perform a password partitioning attack,
+			which is similar to a dictionary attack.
+			The resulting attacks are efficient and low cost.
+			For example, to brute-force all 8-character lowercase passwords,
+			we require less than 40 handshakes and 125$ worth of Amazon EC2 instances.
+			</p>
+
+			<!-- NO CVE -->
+			<h3><a name="downgrade" href="#downgrade">Downgrade to Dictionary Attack</a></h3>
+			<p>
+			To enable the gradual deployment of WPA3, the Wi-Fi Alliance added a transition mode to WPA3 where a network can simultaneously support both WPA2 and WPA3.
+			Unfortunately, this mode is vulnerable to downgrade attacks.
+			In particular, if a client and AP both support WPA2 and WPA3, an adversary can set up a rogue AP that only supports WPA2.
+			This causes the client (i.e. victim) to connect using WPA2's 4-way handshake.
+			Although the client detects the downgrade-to-WPA2 during the 4-way handshake, this is too late.
+			The 4-way handshake messages that were exchanged before the downgrade was detected,
+			provide enough information to launch an offline dictionary attack.
+			</p>
+
+			<p>
+			We also discovered a downgrade attack against SAE itself,
+			where we can force a device into using a weaker elliptic curve than it normally would use.
+			Additionally, we discovered that the iwd Wi-Fi client and the Samsung Galaxy S10 are vulnerable to downgrade attacks,
+			even against WPA3-only networks.
+			That is, if these devices previously connected to a WPA3-only network,
+			the adversary can create a rogue WPA2 network with the same network,
+			and both iwd and the Galaxy S10 will try to connect to the WPA2 network.
+			This can be abused to launch dictionary attacks.
+			</p>
+
+			<!-- CVE: XXX -->
+			<h3><a name="cacheattack" href="#cacheattack">Cache-Based Side-Channel Attack</a></h3>
+			<p>The password encoding algorithm of Dragonfly, commonly also known as the "hunting and pecking" algorithm, contains conditional branches.
+			If an adversary can determine which branch of the if-then-else branch was taken, they can learn whether the password element was found in a specific iteration of this algorithm.
+			In practice we found that, if an adversary can run unprivileged code on the victim machine, we were able to use cache-based attacks to determine which branch was taken in the first iteration of the password generation algorithm.
+			This information can be abused to perform a password partitioning attack (this is similar to an offline dictionary attack).
+			</p>
+
+			<p>This vulnerability is tracked using identifier <a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9494">CVE-2019-9494</a>.</p>
+
+			<p>
+			A backward-compatible countermeasure is to replace conditional branches that depend on secret values with constant-time select utilities. Implementations must also use a constant time Legendre symbol computation.
+			</p>
+
+			<!-- No CVE?? hostap is vulnerable if enabled -->
+			<h3><a name="timingattack" href="#timingattack">Timing-Based Side-Channel Attack</a></h3>
+			<p>
+			When the Dragonfly handshake uses certain multiplicative groups, the password encoding algorithm uses a variable number of iteratins to encode the password.
+			The precise number of iterations depends on the password being used, and the MAC address of the AP and client.
+			An adversary can perform a remote timing attack against the password encoding algorithm,
+			to determine how many iterations were needed to encode the password.
+			The recovered information can be abused to perform a password partitioning attack, which is similar to an offline dictionary attack.
+			</p>
+
+			<!-- TODO: (other MODP groups can still be used) -->
+			<p>The prevent our timing-based attack, implementations should disable the vulnerable multiplicative groups.
+			More technically, MODP groups 22, 23, and 24 should be disabled.
+			We also advice implementations to disable the MODP groups 1, 2, and 5.</p>
+
+			<p>This vulnerability is tracked using the identifier <a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9494">CVE-2019-9494</a>.
+			Notice that this identifier is also use to track our cache-based attack, since both are side-channel vulnerabilities in the Dragonfly handshake.</p>
+
+			<!-- No CVE, latest hostap can by bypassed -->
+			<h3><a name="dos" href="#dos">Denial-of-Service Attack</a></h3>
+			<p>
+			An adversary can overload an AP by initiating a large amount of handshakes with a WPA3-enabled Access Point (AP).
+			Although WPA3 contains a defense to prevent such denial-of-service attacks, it can be trivially bypassed.
+			By repeatedly initiating handshakes from spoofed MAC addresses, the AP performs many costly password derivation operations (i.e. it performs many executions of the "Hunting and Pecking" algorithm).
+			Depending on the AP under attack, this may consume all resources of the AP.
+			</p>
+
+			<p>
+			A backwards-compatible countermeasure is to perform the password generation algorithm (the "hunting and pecking" algorithm) in a low-priority background thread.
+			Although this will still result in a high CPU usage, it assures that other functionality of the AP remains responsive.
+			</p>
+
+			<!-- No CVE, everything is vulnerable -->
+			<h3><a name="groupdowngrade" href="#groupdowngrade">Group Downgrade Attack</a></h3>
+			
+			<p>
+			An adversary can downgrade the cryptographic group that is used during WPA3's Dragonfly handshake.
+			For example, say a client supports the elliptic curves P-521 and P-256, and prefers to use them in that order.
+			In that case, even thoug the AP also supports the P-521 curve, an adversary can force the client and AP into using the weaker P-256 curve.
+			This can be accomplished by jamming the messages of the Dragonfly handshake, and forging a message that indicates certain curves are not supported.
+			</p>
+
+			<p>
+			To mitigate attacks, a client and AP should only enable groups that are known to be secure.
+			For information on which groups should be avoided, we refer to <a href="https://tools.ietf.org/html/rfc8247">RFC 8247</a>.
+			</p>
+
+
+		<!-------------------- EAP-pwd -------------------->
+
+		<a name="eappwd" ></a>
+		<h2>Flaws in EAP-pwd</h2>
+
+		<p>
+		Due to the severity of some of our (implementation-specific) attacks against EAP-pwd,
+		we will briefly delay the release of the full details of the vulnerabilities that we discovered.
+		<strong>Please use this short time window to update your devices,</strong>
+		we plan to provide the full details in as little as a few hours.
+		</p>
+
+		<!-------------------- PAPER -------------------->
+		
+		<a name="paper" ></a>
+		<h2>Paper</h2>
+		
+		<p>
+		Our research paper behind the attack is titled <a href="https://papers.mathyvanhoef.com/dragonblood.pdf">Dragonblood: A Security Analysis of WPA3's SAE Handshake</a>.
+		The paper focusses on all discoveries related to WPA3.
+		In other words, the recent discoveries concerning the EAP-pwd protocol are not discussed in this paper.
+		</p>
+
+		<!-- TODO: Include example bibtex once on eprint -->
+
+		<!-------------------- Tools -------------------->
+			
+		<a name="tools"></a>
+		<h2>Tools</h2>
+		<p>We have made scripts to test for certain vulnerabilities:</p>
+		<ul>
+			<li><strong><a href="https://github.com/vanhoefm/dragonslayer">Dragonslayer</a></strong>: implements attacks against EAP-pwd (to be released shortly).</li>
+			<li><strong><a href="https://github.com/vanhoefm/dragondrain">Dragondrain</a></strong>: this tool can be used to test to which extend an Access Point is vulnerable to denial-of-service attacks against WPA3's SAE handshake.</li>
+			<li><strong><a href="https://github.com/vanhoefm/dragontime">Dragontime</a></strong>: this is an experimental tool to perform timing attacks against the SAE handshake if MODP group 22, 23, or 24 is used.
+			Note that most WPA3 implementations by default do not enable these groups.</li>
+			<li><strong><a href="https://github.com/vanhoefm/dragonforce">Dragonforce</a></strong>: this is an experimental tool which takes the information recover from our timing or cache-based attacks, and performs a password partitioning attack. This is similar to a dictionary attack.</li>
+		</ul>
+		
+		<!-------------------- Q&A -------------------->
+
+		<!--
+			- Is there an advantage in hiding the SSID of my network?
+			- Does the attacker need to be part of the network?
+		-->
+
+		<a name="faq" ></a>
+		<h2>Q&amp;A</h2>
+
+			<ul>
+				<li><a href="#itwasbusy">Why aren't there more Q&As entries?</a></li>
+			</ul>
+
+			<a name="itwasbusy" ></a>
+			<h3>Why aren't there more Q&A entries?</h3>
+			<p>
+			We discovered certain implementation-specific vulnerabilities in the EAP-pwd protocol fairly late during the embargo period.
+			In the past days we focussed on helping vendors write and audit patches for EAP-pwd to prevent the most critical attacks,
+			instead of working on the webiste.
+			We will further update the website over the next hours and days!
+			</p>
+
+		<!-------------------- END OF MAIN CONTENT -------------------->
+<div type="margin: 0px auto;">            
+</div>
+        </div>
+	</div>
+</div>
+
+<div id="copyright" class="container">
+	<p><a  rel="license" href="http://creativecommons.org/licenses/by/4.0/" style="letter-spacing: normal;">
+        Creative Commons Attribution 4.0 International License</a> | Design inspired by <a href="http://templated.co" rel="nofollow">TEMPLATED</a>.</p>
+</div>
+<script type="text/javascript">
+/**
+ * Mobile Menu
+ */
+ 
+(function ($) {
+	function close_menu() {
+		$('a#menu_button').removeClass('responsive-toggle-open');
+		$('#menu_title').css('background', '');
+		// So menu still works after being used, and window is resized
+		$('.js #main-nav .menu').removeAttr('style');
+	}
+	var current = $('span.custom-mobile-menu-title').html();
+	$('#main-nav').append('<a id="menu_button"></a>');
+	$('#main-nav').prepend('<div id="menu_title">' + current + '</div>');
+	$('a#menu_button, #menu_title').click(function (e) {
+		e.stopPropagation();
+		$('#menu_title').css('background', '#008C9A');
+		$('.js #main-nav .menu').slideToggle(function () {
+			if ($(this).is(':visible')) {
+				$('a#menu_button').addClass('responsive-toggle-open');
+			}
+			else {
+				close_menu();
+			}
+		});
+	});
+	// Close the mobile menu when clicked outside of it.
+	$('html').click(function () {
+		// Check if the menu is open, close in that case.
+		if ($('a#menu_button').hasClass('responsive-toggle-open')) {
+			$('.js #main-nav .menu').slideToggle(function () {
+				close_menu();
+			});
+		}
+	});
+    
+    // Catch click events outside menu on iOS: https://gist.github.com/danott/855078
+    Modernizr.addTest('ipad', function () {
+        return !!navigator.userAgent.match(/iPad/i);
+    });
+    Modernizr.addTest('iphone', function () {
+        return !!navigator.userAgent.match(/iPhone/i);
+    });
+    Modernizr.addTest('ipod', function () {
+        return !!navigator.userAgent.match(/iPod/i);
+    });
+    Modernizr.addTest('appleios', function () {
+        return (Modernizr.ipad || Modernizr.ipod || Modernizr.iphone);
+    });
+
+    if (Modernizr.appleios) {
+        $("html").addClass("clickable");
+    }
+})(jQuery);
+
+</script>
+</body>
+</html>
