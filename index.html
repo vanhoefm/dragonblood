@@ -222,14 +222,25 @@
 			
 		<a name="tools"></a>
 		<h2>Tools</h2>
-		<p>We have made scripts to test for certain vulnerabilities:</p>
+		<p>
+		All our tools are made available <strong>so other researchers can replicate our results</strong>.
+		These tools are not designed to attack your neighbor's WPA3,
+		and our hope is that vendors mitigate these attacks.
+		</p>
 		<ul>
-			<li><strong><a href="https://github.com/vanhoefm/dragonslayer">Dragonslayer</a></strong>: implements attacks against EAP-pwd (to be released shortly).</li>
-			<li><strong><a href="https://github.com/vanhoefm/dragondrain-and-time">Dragondrain</a></strong>: this tool can be used to test to which extend an Access Point is vulnerable to denial-of-service attacks against WPA3's SAE handshake.</li>
-			<li><strong><a href="https://github.com/vanhoefm/dragondrain-and-time">Dragontime</a></strong>: this is an experimental tool to perform timing attacks against the SAE handshake if MODP group 22, 23, or 24 is used.
+			<li><strong><a href="https://github.com/vanhoefm/dragonslayer">Dragonslayer</a></strong>: performs invalid curve attacks against EAP-pwd clients and server.
+			These attacks bypass authentication: an adversary only needs to possess a valid username.
+			<li><strong><a href="https://github.com/vanhoefm/dragondrain-and-time">Dragondrain</a></strong>: this tool can be used to test wether, or to which extend, an Access Point is vulnerable to denial-of-service attacks against WPA3's SAE handshake.</li>
+			<li><strong><a href="https://github.com/vanhoefm/dragondrain-and-time">Dragontime</a></strong>: this is an experimental tool to perform timing attacks against the SAE handshake if MODP group 22, 23, or 24 are supported.
 			Note that most WPA3 implementations by default do not enable these groups.</li>
-			<li><strong><a href="https://github.com/vanhoefm/dragonforce">Dragonforce</a></strong>: this is an experimental tool which takes the information recover from our timing or cache-based attacks, and performs a password partitioning attack. This is similar to a dictionary attack.</li>
+			<li><strong><a href="https://github.com/vanhoefm/dragonforce">Dragonforce</a></strong>: this is an experimental tool which takes the information recovered from our timing or cache-based attacks, and performs a password partitioning attack. This is similar to a dictionary attack.</li>
 		</ul>
+		<p>
+		In practice the main risks for WPA3 are downgrade attacks, and possible timing attacks against resource-constrained devices.
+		The authentication bypass attacks against EAP-pwd that are implemented in Dragonslayer are also security critical in practice.
+		Considering the other attacks are non-trivial in practice, and assuming vendors will implement defenses against them,
+		we expect that your neighbour won't abuse them to attack you.
+		</p>
 		
 		<!-------------------- Q&A -------------------->
 
