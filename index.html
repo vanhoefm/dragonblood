@@ -47,8 +47,8 @@
 			<span class="custom-mobile-menu-title" style="display: none;">Navigate page</span>
 			<ul class="menu">
 				<li class="page_item"><a href="#intro">Intro</a></li>
-				<li class="page_item"><a href="#wpa3">WPA3</a></li>
-				<li class="page_item"><a href="#eappwd">EAP-pwd</a></li>
+				<li class="page_item"><a href="#new">New</a></li>
+				<li class="page_item"><a href="#details">Details</a></li>
 				<li class="page_item"><a href="#paper">Paper</a></li>
 				<li class="page_item"><a href="#tools">Tools</a></li>
 				<li class="page_item"><a href="#faq">Q&amp;A</a></li>
@@ -61,28 +61,30 @@
 
 		<a name="intro" ></a>
 		<h2 class="firsttitle">Introduction</h2>
-		<p>Currently, all modern Wi-Fi networks use WPA2 to protect transmitted data.
+		<p>April 2019 &mdash;
+		Modern Wi-Fi networks use WPA2 to protect transmitted data.
 		However, because WPA2 is more than 14 years old,
 		the Wi-Fi Alliance <a href="https://www.wi-fi.org/news-events/newsroom/wi-fi-alliance-introduces-wi-fi-certified-wpa3-security">recently announced</a> the new and more secure WPA3 protocol.
-		One of the main advantages of WPA3 is that, thanks to its underlying Dragonfly handshake, it's near impossible to <a href="https://arstechnica.com/information-technology/2012/08/wireless-password-easily-cracked/">crack</a> the password of a network.
-		Unfortunately, we found that even with WPA3, an attacker within range of a victim can still recover the password of the network.
-		This allows the adversary to steal sensitive information such as credit cards, password, emails, and so on, when the victim uses no extra layer of protection such as HTTPS.
-		Fortunately, we expect that our work and coordination with the Wi-Fi Alliance will allow vendors to mitigate our attacks before WPA3 becomes widespread.
+		One of the supposed advantages of WPA3 is that, thanks to its underlying Dragonfly handshake, it's near impossible to <a href="https://arstechnica.com/information-technology/2012/08/wireless-password-easily-cracked/">crack</a> the password of a network.
+		Unfortunately, we found that <strong>even with WPA3, an attacker within range of a victim can still recover the password</strong>.
+		If the victim uses no extra protection such as <a href="https://en.wikipedia.org/wiki/HTTPS">HTTPS</a>,
+		this allows an attacker to steal sensitive information such as passwords and emails.
+		We hope our disclosure motivates vendors to mitigate our attacks before WPA3 becomes widespread.
 		</p>
 
 		<p>
-		The Dragonfly handshake, which forms the core of WPA3, is also used on certain Wi-Fi networks that require a username and password for access control.
-		That is, Dragonfly is also used in the EAP-pwd protocol.
-		Unfortunately, our attacks against WPA3 also work against EAP-pwd, meaning an adversary can even recover a user's password when EAP-pwd is used.
+		The Dragonfly handshake is also used certain in enterprise Wi-Fi networks that require a username and password for access control.
+		More precisely, Dragonfly is also used by the EAP-pwd protocol,
+		and our attacks work against this protocol as well.
+		For example, an adversary can use similar techniques against EAP-pwd to recover a user's password.
 		We also discovered serious bugs in most products that implement EAP-pwd.
-		These allow an adversary to impersonate any user, and thereby <strong>access the Wi-Fi network, without knowing the user's password</strong>.
-		Although we believe that EAP-pwd is used fairly infrequently, this still poses serious risks for many users,
-		and illustrates the risks of incorrectly implementing Dragonfly.
+		These bugs allow an adversary to impersonate any user, and thereby <strong>access the Wi-Fi network, without knowing the user's password</strong>.
+		Although EAP-pwd is used fairly infrequently in practice, these results illustrate the risks of incorrectly implementing the Dragonfly handshake.
 		</p>
 
 		<p>
-		The technical details behind our attacks against WPA3 can be found in our detailed research paper titled <a href="https://eprint.iacr.org/2019/383">Dragonblood: A Security Analysis of WPA3's SAE Handshake</a>.
-		The details of our EAP-pwd attacks are explained on this website.
+		Details behind our findings are explained in our paper <a href="https://eprint.iacr.org/2019/383">Dragonblood: Analyzing the Dragonfly Handshake of WPA3 and EAP-pwd</a>.
+		This paper will be presented at the IEEE Symposium on Security and Privacy on 18-20 May 2020 in Oakland, San Francisco.
 		</p>
 
 		<h3>Coordinated Disclosure</h3>
@@ -90,14 +92,100 @@
 		We collaborated with the Wi-Fi Alliance and CERT/CC to notify all affected vendors in a coordinated manner,
 		and helped with implementing backwards-compatible countermeasures. Please check with your vendors for updates.
 		The Wi-Fi Alliance has published a <a href="https://www.wi-fi.org/news-events/newsroom/wi-fi-alliance-security-update-april-2019">press release</a>,
-		and <a href="https://w1.fi/security/">hostap published advisories</a> and patches.
-		We will post more information about CVEs and available patches as they become public.
+		<a href="https://w1.fi/security/">hostap published advisories</a> and patches,
+		and we also provide an overview of <a href="#details">known CVEs</a>.
 		</p>
 
 		<!-------------------- DETAILS -------------------->
-			
-		<a name="wpa3" ></a>
-		<h2>Flaws in WPA3</h2>
+
+		<a name="new"></a>
+		<h2>New Results</h2>
+
+		<p>August 2019 &mdash;
+		During our initial disclosure, the Wi-Fi Alliance privately created <a href="WPA3_Security_Considerations_20190410.pdf">security recommendations</a> to mitigate our attacks.
+		In these recommendations, they claim that <a href="http://bada55.cr.yp.to/brainpool.html">Brainpool curves</a> are safe to use,
+		at least if products securely implement Dragonfly's quadratic residue test (i.e. it must be implemented without side-channel leaks).
+		However, we found that <strong>using Brainpool curves introduces a second class of side-channel leaks</strong> in the Dragonfly handshake of WPA3.
+		In other words, even if the advice of the Wi-Fi Alliance is followed, implementations remain at risk of attacks.
+		This demonstrates that <strong>implementing Dragonfly and WPA3 without side-channel leaks is surprisingly hard</strong>.
+		It also, once again, shows that privately creating security recommendations and standards is at best irresponsible and at worst inept.
+		</p>
+
+		<p>
+		Fortunately, as a result of our research,
+		both the <a href="https://mentor.ieee.org/802.11/dcn/19/11-19-1173-08-000m-pwe-in-constant-time.docx">Wi-Fi standard<a>
+		and <a href="https://tools.ietf.org/html/draft-harkins-eap-pwd-prime-00">EAP-pwd</a> are <strong>being updated with a more secure protocol</strong>.
+		Although this update is not backwards-compatible with current deployments of WPA3,
+		it does prevent most of our attacks.
+		</p>
+
+		<p>
+		The new side-channel leak is located in the password encoding algorithm of Dragonfly.
+		This algorithm tries to find a <a href="https://w1.fi/cgit/hostap/tree/src/common/sae.c?h=hostap_2_8#n320">hash output that is smaller than the prime</a> of the elliptic curve being used.
+		With the default NIST curves, such as hash output is always found in the first iteration (i.e. attempt).
+		However, <strong>with Brainpool curves, several iterations may have to be executed before finding a hash output smaller than the prime</strong>.
+		The exact number of iterations depends on the password and MAC address of the client,
+		and can be measured by an adversary using timing and cache-based side-channels.
+		For example, in Figure 1 below,
+		we can see that the blue and orange MAC addresses (i.e. clients) find the desired hash output on average in different iterations.
+		<!-- we can see that the blue and orange client find the hash output at different times. -->
+		</p>
+
+		<div style="text-align: center; margin-bottom: 25px; margin-top: 30px;">
+			<div style="display: inline-block;">
+				<img src="images/brainpool.png" />
+				<p>Figure 1: Brainpool Timing Attack against WPA3</p>
+			</div>
+			<div style="display: inline-block;">
+				<img src="images/eappwd19.png" />
+				<p>Figure 2: Timing Attack Against an EAP-pwd Client</p>
+			</div>
+		</div>
+
+		<p>
+		We confirmed the new Brainpool leak in practice against the lastest Hostapd version,
+		and were able to brute-force the password using the leaked information.
+		Apart from this, we also discovered a new <a href="">implementation-specific side-channel</a> in the EAP-pwd implementation of FreeRADIUS.
+		More worrisome, we found that the Wi-Fi firmware of Cypress chips only executes 8 iterations at minimum to prevent side-channel leaks.
+		Although this makes attacks harder, it does not prevent them.
+		This strengthens our hypothesis that the <strong>backwards-compatible countermeasures against our attacks are too costly for lightweight devices</strong>.
+		</p>
+
+		<p>The following CVEs were allocated for our new findings:</p>
+		<ul>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-13377">CVE-2019-13377</a>: Timing-based side-channel attack against WPA3's Dragonfly handshake when using Brainpool curves.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-13456">CVE-2019-13456</a>: Information leak in FreeRADIUS' EAP-pwd due to aborting when needing more than 10 iterations.</li>
+		</ul>
+
+		<p>
+		In the meantime we also extended our research in the following directions (an updated paper that contributions in more detail will soon follow):
+		</p>
+		<ul>
+			<li>We demonstrated that timing attacks against EAP-pwd clients are feasible in practice as well.
+			For example, from Figure 2 above, we can easily see that the response times of the client leak the number of executed iterations.</li>
+			<li>By using Crosby's box test we can better handle noise in the timing measurements.
+			This also means we require less timing measurements compared to our previous estimates,
+			e.g. with less than <strong>75 timing measurements per spoofed MAC address</strong> we can already recover the number of executed iterations.</li>
+			<li>We improved the cost estimation of the brute force attack using GPUs,
+			and estimated the cost for several example dictionary sizes.
+			This revealed that <strong>less than $1 is enough to brute-force the largest known dictionaries</strong>.</li>
+			<li>We audited and reverse engineered both EAP-pwd and SAE implementations.
+			This revealed several vulnerabilities,
+			including <a href="#invalidcurve">authentication bypasses</a> against all EAP-pwd implementations
+			and against one SAE client.</li>
+			<li>We discuss our novel Brainpool timing attack.</li>
+			<li>We employed <a href="https://github.com/UzL-ITS/Microwalk">MicroWalk</a> to automatically (re)discover our side-channels.
+			This gives a better guarantee that there are no additional (unknown) leaks.</li>
+			<li>We show that the group downgrade attack can be performed by using <a href="https://github.com/vanhoefm/modwifi">ModWifi</a> to block commit frames.</li>
+			<li>Several other improvements were made such that results easier to understand (e.g. more explicit threat model).</li>
+		</ul>
+
+
+		<!-------------------- DETAILS -------------------->
+
+		<a name="details"></a>
+		<h2>Details</h2>
+		<h3><a name="wpa3" href="#wpa3">Flaws in WPA3</a></h3>
 
 			<p>The design flaws we discovered can be divided in two categories.
 			The first category consists of <strong>downgrade attacks against WPA3-capable devices</strong>,
@@ -120,17 +208,17 @@
 			<p>
 			The <strong>resulting attacks are efficient and low cost</strong>.
 			For example, the downgrade attacks can be exploited using existing WPA2 cracking tools and hardware.
-			The side-channel vulnerabilities can, for instance, be abused to brute-force all 8-character lowercase passwords with as little as 125$ worth of Amazon EC2 instances.
+			The side-channel vulnerabilities can, for instance, be abused to carry out a brute-force attack using the largest known dictionaries with as little as $1 worth of Amazon EC2 instances.
 			</p>
 
-			<p>Below we will give high-level descriptions of these attacks, and for the full technical details we refer to <a href="https://papers.mathyvanhoef.com/dragonblood.pdf">our paper</a>.</p>
+			<p>Below we will give high-level descriptions of these attacks, and for the full technical details we refer to <a href="https://eprint.iacr.org/2019/383">our paper</a>.</p>
 
-			<h3><a name="downgrade" href="#downgrade">Downgrade & Dictionary Attack Against WPA3-Transition</a></h3>
+			<h4><a name="downgrade" href="#downgrade">Downgrade & Dictionary Attack Against WPA3-Transition</a></h4>
 			<p>
 			Our first attack exploits the backward compatibility of WPA3.
-			To accommodate older clients that only support WPA2, and to motivate the transition towards WPA3, a WPA3-Transition mode was created.
+			To accommodate older clients that only support WPA2, and to motivate the transition towards WPA3, a transition mode was defined in the WPA3 specification.
 			In this mode a Wi-Fi network supports the usage both WPA3 and WPA2 with an identical password.
-			We found that an adversary can create a rogue network and <strong>force clients that support WPA3 into connecting using WPA2</strong>.
+			We found that an adversary can create a rogue network and <strong>force clients that support WPA3 into connecting to the rogue WPA2-only network</strong>.
 			The captured partial WPA2 handshake can be used to recover the password of the network (using brute-force or dictionary attacks).
 			No man-in-the-middle position is required to perform this attack.
 			</p>
@@ -141,7 +229,7 @@
 			This allows an adversary to recover the network's password using brute-force or dictionary attacks.
 			</p>
 
-			<h3><a name="groupdowngrade" href="#groupdowngrade">Security Group Downgrade Attack</a></h3>
+			<h4><a name="groupdowngrade" href="#groupdowngrade">Security Group Downgrade Attack</a></h4>
 			<p>
 			We also discovered a downgrade attack against the WPA3's Dragonfly handshake itself,
 			where the victim can be forced to use a weak security group.
@@ -149,20 +237,25 @@
 			If the AP does not support this group, it responds with a decline message, forcing the client to send a commit frame using another group.
 			This process continues until a security group is found that is supported by both sides.
 			An attacker can impersonate an AP and forge decline messages to <strong>force clients into choosing a weak security group</strong>.
-			<!-- The client can also be forced to pick a computationally more expensive group to exhaust its resources. -->
 			</p>
 
-			<h3><a name="timingattack" href="#timingattack">Timing-Based Side-Channel Attack</a></h3>
+			<h4><a name="timingattack" href="#timingattack">Timing-Based Side-Channel Attack</a></h4>
 			<p>
 			With WPA3 it is considered infeasible for an adversary to recover the password of a Wi-Fi network.
 			Unfortunately, we discovered that the <strong>amount of times it takes for an AP to respond to commit frames may leak information about the password</strong>.
-			When the AP uses security groups based on elliptic curves, which all WPA3 devices are required to support, no timing information is leaked.
-			However, when the AP supports the optional multiplicative security groups modulo a prime (MODP groups), the response time depends on the password being used.
+			When the AP uses security groups based on NIST elliptic curves, which all WPA3 devices are required to support, no timing information is leaked.
+			However, when the AP supports either Brainpool curves, or multiplicative security groups modulo a prime (MODP groups),
+			the response time depends on the password being used.
 			An adversary can abuse this information to perform a dictionary attack, by simulating how much time it would take for the AP to process each password,
 			and comparing this to observed timings.
 			</p>
+			<p>
+			We remark that contrary to some claims, <strong>Dragonfly was indeed designed to support multiplicative security (MODP) groups</strong>.
+			After all, the <a href="https://tools.ietf.org/html/rfc8492#section-4.4.2">Dragonfly variant used in TLS-PWD</a> includes a minor change such that these MODP groups can <a href="#modpgroups">be safely used</a>.
+			Unfortunately those changes were not backported to the Dragonfly variant used in WPA3.
+			</p>
 
-			<h3><a name="cacheattack" href="#cacheattack">Cache-Based Side-Channel Attack</a></h3>
+			<h4><a name="cacheattack" href="#cacheattack">Cache-Based Side-Channel Attack</a></h4>
 			<p>
 			When an adversary is able to observe memory access patterns on a victim's device when it's constructing the commit frame of a Dragonfly handshake,
 			these <strong>memory access patterns reveal information about the password</strong> being used.
@@ -171,8 +264,10 @@
 			The leaked patterns can be used to perform a dictionary attack, by simulating the memory access patterns associated to a guessed password,
 			and comparing this to the measured access patterns.
 			</p>
+			<p>We believe modern protocols should provide <a href="#scastandard">explicit guidance</a> on how to prevent memory access patterns from leaking secret information.
+			We therefore consider this to be a flaw in the specification of WPA3's Dragonfly handshake.</p>
 
-			<h3><a name="dos" href="#dos">Denial-of-Service Attack</a></h3>
+			<h4><a name="dos" href="#dos">Denial-of-Service Attack</a></h4>
 
 			<p>The device that initiates the Dragonfly handshake starts by sending a commit frame.
 			Processing this frame and generating an answer is computationally expensive,
@@ -188,22 +283,85 @@
 			<p>
 			Although the attack can be mitigated by processing the commit frame in a low-priority background thread,
 			variants of the attack remain possible.
-			Depending on the precise defense that vendors implement, either it will still be possible to trigger a high CPU usage on the AP,
-			or it will still be possible to prevent or delay other devices from connecting to the AP using WPA3.
+			Depending on the precise defense that vendors implement, it will either still be possible to trigger a high CPU usage on the AP,
+			or it will be possible to prevent or delay other devices from connecting to the AP using WPA3.
 			</p>
 
 
 		<!-------------------- EAP-pwd -------------------->
 
-		<a name="eappwd" ></a>
-		<h2>Flaws in EAP-pwd</h2>
+		<h3><a name="eappwd" href="#eappwd">Flaws in EAP-pwd</a></h3>
 
 		<p>
-		Due to the severity of some of our (implementation-specific) attacks against EAP-pwd,
-		we will briefly delay the release of the full details of the vulnerabilities that we discovered.
-		<strong>Please use this short time window to update your devices,</strong>
-		we plan to provide the full details in as little as a few hours.
+		The EAP-pwd protocol internally also uses Dragonfly, and provides authentication based on a username and password in certain enterprise Wi-Fi networks.
+		It is vulnerable to the same attacks that we discovered against WPA3.
+		On top of that, all implementations of EAP-pwd that we tested were vulnerable to invalid curve attacks,
+		which enable to adversary to completely bypass authentication.
+		Most implementations were also vulnerable to reflection attacks.
+		All combined, EAP-pwd implementations are affected by the following vulnerabilities:
+                </p>
+		<ul>
+			<li><a href="https://kb.cert.org/vuls/id/871675/">CERT ID #VU871675</a>: Overview of attacks specific to hostapd and wpa_supplicant (does not cover other implementations).</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9495">CVE-2019-9495</a>: Cache-based side-channel attack against the EAP-pwd implementation of hostapd and wpa_supplicant.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9497">CVE-2019-9497</a>: Reflection attack against the EAP-pwd implementation of hostapd and wpa_supplicant.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9498">CVE-2019-9498</a>: Invalid curve attack against the EAP-pwd server of hostapd resulting in authentication bypass.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-9499">CVE-2019-9499</a>: Invalid curve attack against the EAP-pwd client of wpa_supplicant resulting in server impersonation.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-11234">CVE-2019-11234</a>: Reflection attack against the EAP-pwd implementation of FreeRADIUS.</li>
+			<li><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-11235">CVE-2019-11235</a>: Invalid curve attack against the EAP-pwd server of FreeRADIUS resulting in authentication bypass.</li>
+		</ul>
+		<p>We remark that not all vulnerable products received a CVE identifier.</p>
+
+		<p>
+		Our two side-channel attacks against EAP-pwd are similar to the timing-based and cache-based side-channel attacks against WPA3's Dragonfly handshake.
+		Both these side-channel attacks are explained in our WPA3 summary.
+		The timing attack is only applicable against EAP-pwd clients.
+		The reflection and invalid curve attack are new implementation-specific attacks.
+		Although these two attacks are not design flaws, nearly all implementations of EAP-pwd that we tested were vulnerable to them.
 		</p>
+
+		<h4><a name="invalidcurve" href="#invalidcurve">Invalid Curve Attack</a></h4>
+
+		<p>
+		By sending specially crafted elliptic curve points, the <strong>adversary can completely bypass authentication</strong>.
+		This can be used against a server to connect to any Wi-Fi network that supports EAP-pwd.
+		Against a client, an adversary can abuse this to act as a rogue Access Point.
+		</p>
+
+		<p>
+		The invalid curve attack can be prevented by discarding elliptic curve points that don't lie on the elliptic curve being used
+		(and discarding the point at infinity).
+		</p>
+
+		<h4><a name="dos" href="#reflection">Reflection Attack</a></h4>
+
+		<p>
+		The adversary can reflect the commit and confirm frame of the Dragonfly handshake back towards the server.
+		Doing this is possible because the handshake is designed to be symmetric.
+		This allows an adversary to authenticate with the network as another user.
+		However, because the adversary will not learn the negotiated encryption key, they cannot perform any actions under that user.
+		</p>
+
+		<p>
+		The reflection attack can be prevented by comparing the scalar and element from the server and client,
+		and aborting the handshake if either of them are the same.
+		</p>
+
+		<h4><a name="eapdevices" href="#eapdevices">Tested Implementations</a></h4>
+		<p>
+		The implementations of EAP-pwd that we tested are:
+		</p>
+		<ul>
+			<li><strong>FreeRADIUS</strong>: we wrote <a href="https://github.com/FreeRADIUS/freeradius-server/commit/a99746c93b8b3ae3be367af0e46f0d6a9626f566">patches</a> to prevent invalid curve and reflection attacks.
+			At the time of writing, the current version was still vulnerable to timing and cache-based side-channels.</li>
+			<li><strong>Radiator</strong>: we <a href="https://open.com.au/OSC-SEC-2019-01.html">inspected</a> patches that prevent invalid curve and reflection attacks.
+			At the time of writing, the current version was still vulnerable to timing and cache-based side-channels.</li>
+			<li><strong>Aruba's EAP-pwd for Windows</strong>: we believe this product is no longer officially supported.
+			Similar to other EAP-pwd implementations, it was vulnerable to all attacks.</li>
+			<li><strong>iNet Wireless Daemon</strong>: we wrote patches to prevent <a href="https://lists.01.org/pipermail/ell/2019-April/001899.html">invalid</a> <a href="https://lists.01.org/pipermail/iwd/2019-April/005951.html">curve</a> <a href="https://lists.01.org/pipermail/iwd/2019-April/005952.html">attacks</a>.
+			At the time of writing, the current version was still vulnerable to timing and cache-based side-channels.</li>
+			<li><strong>Hostapd and wpa_supplicant</strong>: we wrote patches to prevent <a href="https://w1.fi/cgit/hostap/commit/?id=8ad8585f91823ddcc3728155e288e0f9f872e31a">invalid</a> <a href="https://w1.fi/cgit/hostap/commit/?id=70ff850e89fbc8bc7da515321b4d15b5eef70581">curve</a> and <a href="https://w1.fi/cgit/hostap/commit/?id=d63edfa90243e9a7de6ae5c275032f2cc79fef95">reflection</a> attacks.
+			The maintainer of this project also wrote patches to prevent the timing and cache-based side-channel attacks.</li>
+		</ul>
 
 		<!-------------------- PAPER -------------------->
 		
@@ -211,10 +369,24 @@
 		<h2>Paper</h2>
 		
 		<p>
-		Our research paper behind the attack is titled <a href="https://eprint.iacr.org/2019/383">Dragonblood: A Security Analysis of WPA3's SAE Handshake</a>.
-		The paper focusses on all discoveries related to WPA3.
-		In other words, the recent discoveries concerning the EAP-pwd protocol are not discussed in this paper.
+		Our research paper behind the attack is titled <a href="https://eprint.iacr.org/2019/383">Dragonblood: Analyzing the Dragonfly Handshake of WPA3 and EAP-pwd</a>,
+		and will be presented at the <a href="https://www.ieee-security.org/TC/SP2020/">IEEE Symposium on Security and Privacy</a> on 18-20 May 2020 in Oakland, San Francisco.
+		Older revisions of the paper can be <a href="https://eprint.iacr.org/eprint-bin/versions.pl?entry=2019/383">found on eprint</a>.
 		</p>
+
+		<a name="citeme"></a>
+		<h3>Citation example and bibtex entry</h3>
+		<p>You can use the following example citation or bibtex entry to reference our paper:</p>
+		<div class="indent">
+			<p>Mathy Vanhoef and Eyal Ronen. 2020. Dragonblood: Analyzing the Dragonfly Handshake of WPA3 and EAP-pwd. In IEEE Symposium on Security & Privacy (SP). IEEE.</p>
+			<pre class="code">@inproceedings{vanhoef-sp2020-dragonblood,
+  author = {Mathy Vanhoef and Eyal Ronen},
+  title = {Dragonblood: Analyzing the {Dragonfly} Handshake of {WPA3} and {EAP-pwd}},
+  booktitle = {IEEE Symposium on Security \& Privacy (SP)},
+  year = {2020},
+  publisher = {IEEE}
+}</pre>
+		</div>
 
 		<!-- TODO: Include example bibtex once on eprint -->
 
@@ -248,16 +420,78 @@
 		<h2>Q&amp;A</h2>
 
 			<ul>
-				<li><a href="#itwasbusy">Why aren't there more Q&As entries?</a></li>
+				<li><a href="#usewpa3">Should I use WPA3?</a></li>
+				<li><a href="#modpgroups">Was Dragonfly designed to be used with the vulnerable MODP groups?</a></li>
+				<li><a href="#scastandard">Are the (cache-based) side-channel attacks an implementation or design flaw?</a></li>
+				<li><a href="#transmodedown">Is the downgrade attack against transition mode a flaw in WPA3?</a></li>
+				<li><a href="#transmodeoldaps">What if a network has both WPA3-capable APs and older WPA2-only APs?</a></li>
+				<li><a href="#alternatives">Could the Wi-Fi Alliance have picked a different handshake than Dragonfly?</a></li>
+				<li><a href="#implementwpa3">How can I implement WPA3 to avoid cache attacks?</a></li>
 			</ul>
 
-			<a name="itwasbusy" ></a>
-			<h3>Why aren't there more Q&A entries?</h3>
+			<a name="usewpa3" ></a>
+			<h3>Should I use WPA3?</h3>
 			<p>
-			We discovered certain implementation-specific vulnerabilities in the EAP-pwd protocol fairly late during the embargo period.
-			In the past days we focussed on helping vendors write and audit patches for EAP-pwd to prevent the most critical attacks,
-			instead of working on the webiste.
-			We will further update the website over the next hours and days!
+			If vendors don't come up with a better variant of WPA3, then you should switch to WPA3 once it is available.
+			After all, we hope that vendors will mitigate most of our attacks, meaning WPA3 will still be an improvement over WPA2.
+			However, there's still a risk that lightweight devices will be unable to implement all countermeasures due to their high overhead.
+			</p>
+
+			<a name="modpgroups" ></a>
+			<h3>Was Dragonfly designed to be used with the vulnerable MODP groups?</h3>
+			<p>
+			<strong>Dragonfly was indeed designed to support multiplicative security (MODP) groups</strong>.
+			After all, the <a href="https://tools.ietf.org/html/rfc8492#section-4.4.2">Dragonfly variant used in TLS-PWD</a> was made such that these MODP groups could safely be used.
+			More technically, TLS-PWD prevents timing attacks when using MODP groups 22, 23, and 24,
+			by avoiding extra loops when the password hash is bigger than the prime number of the security group being used.
+			Unfortunately this defense was not backported to the WPA3's Dragonfly.
+			</p>
+
+			<a name="scastandard" ></a>
+			<h3>Are the (cache-based) side-channel attacks an implementation or design flaw?</h3>
+			<p>
+			When looking at other standards being created,
+			some provide <a href="https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-03#section-5.3.2">explicit guidance</a> on how to avoid (cache-based) side-channel attacks,
+			and others avoid those attacks in their <a href="https://elligator.cr.yp.to/index.html">design</a> <a href="https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-03#section-5.3.1">itself</a>.
+			Considering that the programmers which will implement Dragonfly may not be security experts,
+			such advice is essential to assure implementations are secure.
+			We therefore strongly believe that standards shoulds explicitly include a discussion of possible side-channel attacks.
+			</p>
+
+			<a name="transmodedown" ></a>
+			<h3>Is the downgrade attack against transition mode a flaw in WPA3?</h3>
+			<p>
+			Yes. We expect that most WPA3 networks will operate in transition mode for many years to come.
+			This means that, unless our downgrade attack is mitigated, WPA3 will not prevent dictionary attacks.
+			</p>
+
+			<a name="transmodeoldaps" ></a>
+			<h3>What if a network has both WPA3-capable APs and older WPA2-only APs?</h3>
+			<p>
+			We believe more openness during the creation of WPA3 would have allowed researchers to provide ideas on how to securely handle handle networks where not all APs support WPA3.
+			For example, a flag could have been added to the RSNE to indicate whether all APs in a network support WPA3 or not.
+			This will allow WPA3-capable clients to determine whether downgrades to WPA2 should be allowed or not:
+			against networks where all APs support WPA3 downgrade attacks can be prevented,
+			while downgrades to WPA2 are still allowed in networks that contain older WPA2-only APs.
+			</p>
+
+			<a name="alternatives" ></a>
+			<h3>Could the Wi-Fi Alliance have picked a different handshake than Dragonfly?</h3>
+			<p>
+			Other standardized handshakes exists that provide similar features as Dragonfly.
+			For example, SESPAKE and J-PAKE are both specified in RFCs and provide similar security guarantees.
+			But more importantly, minor changes to Dragonfly could have prevented most of our attacks.
+			In fact, the <a href="https://mailarchive.ietf.org/arch/msg/ipsec/NEicYFDYJYcQuNdknY0etLyfITA">CFRG</a> <a href="https://www.ietf.org/mail-archive/web/tls/current/msg10922.html">repeatedly</a> <a href="https://www.ietf.org/mail-archive/web/cfrg/current/msg03258.html">advised</a> <a href="https://www.ietf.org/mail-archive/web/cfrg/current/msg03261.html">the</a> <a href="https://mailarchive.ietf.org/arch/msg/cfrg/Z-nnOKTA4ddmFd17l5KzlRwWm5Y">designers</a> to slightly chance the design of Dragonfly.
+			Had the designers incorporated these suggestions, most our attacks would have been mitigated.
+			</p>
+
+			<a name="implementwpa3" ></a>
+			<h3>How can I implement WPA3 to avoid cache attacks?</h3>
+			<p>
+			It's exceptionally hard to implement all parts of WPA3 without introducing side-channel leaks.
+			The best approach to securely implement WPA3 that we encountered so far is the one of Microsoft:
+			only support cryptographic group 19,
+			and follow <a href="https://github.com/Microsoft/SymCrypt/blob/master/lib/IEEE802_11SaeCustom.c#L131">their techniques</a> to implement the hunting and pecking algorithm.
 			</p>
 
 		<!-------------------- END OF MAIN CONTENT -------------------->

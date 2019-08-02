@@ -355,21 +355,23 @@ sup {
 	}
 }
 
-#content h3
+#content h3, #content h3 a
 {
 	/*letter-spacing: 0.15em;*/
-	font-size: 1.10em;
+	font-size: 1.25em;
 	font-weight: bold;
 	color: #318478;
 	margin-top: 15px;
 	margin-bottom: 15px;
 	margin-top: 30px;
+
+	text-decoration: none;
 }
 
-#content h3 a
+#content h4, h4 a
 {
 	/*letter-spacing: 0.15em;*/
-	font-size: 1.10em;
+	font-size: 1.05em;
 	font-weight: bold;
 	color: #318478;
 	margin-top: 15px;
