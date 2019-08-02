@@ -121,13 +121,13 @@
 
 		<p>
 		The new side-channel leak is located in the password encoding algorithm of Dragonfly.
-		This algorithm tries to find a <a href="https://w1.fi/cgit/hostap/tree/src/common/sae.c?h=hostap_2_8#n320">hash output that is smaller than the prime</a> of the elliptic curve being used.
-		With the default NIST curves, such as hash output is always found in the first iteration (i.e. attempt).
+		This algorithm first tries to find a <a href="https://w1.fi/cgit/hostap/tree/src/common/sae.c?h=hostap_2_8#n320">hash output that is smaller than the prime</a> of the elliptic curve being used.
+		With the default NIST curves, such a hash output is practically always found immediately.
 		However, <strong>with Brainpool curves, several iterations may have to be executed before finding a hash output smaller than the prime</strong>.
-		The exact number of iterations depends on the password and MAC address of the client,
-		and can be measured by an adversary using timing and cache-based side-channels.
+		The number of iterations that didn't have such a valid hash output depends on the password being used and on the MAC address of the client.
+		Simplified, the resulting timing and execution differences can be measured by an adversary.
 		For example, in Figure 1 below,
-		we can see that the blue and orange MAC addresses (i.e. clients) find the desired hash output on average in different iterations.
+		we can see that for the blue and orange MAC addresses (i.e. clients) the desired hash output was, on average, found in different iterations.
 		<!-- we can see that the blue and orange client find the hash output at different times. -->
 		</p>
 
@@ -158,7 +158,7 @@
 		</ul>
 
 		<p>
-		In the meantime we also extended our research in the following directions (an updated paper that contributions in more detail will soon follow):
+		In the meantime we also extended our research in the following directions:
 		</p>
 		<ul>
 			<li>We demonstrated that timing attacks against EAP-pwd clients are feasible in practice as well.
